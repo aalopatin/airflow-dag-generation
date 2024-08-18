@@ -6,7 +6,9 @@ from typing import Union, List, Tuple, Callable
 from airflow import DAG
 from airflow.exceptions import *
 from airflow.models import BaseOperator
+from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.providers.ssh.operators.ssh import SSHOperator
 from airflow.utils.task_group import TaskGroup
 
 from generation.fields import GraphFields, DagFields
@@ -16,6 +18,10 @@ graph_types = Union[
     TaskGroup, BaseOperator, List[Union[TaskGroup, BaseOperator]], Tuple[Union[TaskGroup, BaseOperator], ...]
 ]
 
+operator_mapping = {
+    "BashOperator": BashOperator
+}
+
 
 def generate_task(
         task_source: Union[str, dict],
@@ -23,16 +29,27 @@ def generate_task(
         **kwargs: Any
 ):
     """
-    Generates an Airflow task (EmptyOperator) based on the provided task source.
+    Generates an Airflow task based on the provided task source.
 
     :param task_source: The source of the task, which can be either a string (task ID) or a dictionary containing task properties.
     :param task_group: The TaskGroup to which this task will belong.
-    :param kwargs: Additional arguments that may be passed to the task creation process.
-    :return: An instance of EmptyOperator representing the generated task.
+    :param kwargs: Additional arguments that may be passed to the operator.
+    :return: An instance of operator representing the generated task.
     :raises ValueError: If the task source is neither a string nor a dictionary.
     """
     if isinstance(task_source, dict):
         task_id = task_source.get(GraphFields.id)
+        operator_name = task_source.get(GraphFields.operator)
+        if operator_name:
+            operator_class = operator_mapping.get(operator_name)
+            if operator_class:
+                return operator_class(
+                    task_id=task_id,
+                    task_group=task_group,
+                    **GraphFields.filter_dict(task_source)
+                )
+            else:
+                raise ValueError(f"Unsupported operator: {operator_name}")
     elif isinstance(task_source, str):
         task_id = task_source
     else:
@@ -158,7 +175,10 @@ def generate_groups_and_tasks(
         if is_group(item):
             items.append(generate_groups_and_tasks(item, task_generator, group, **kwargs))
         else:
-            items.append(task_generator(task_source=item, task_group=group, **kwargs))
+            task = task_generator(task_source=item, task_group=group, **kwargs)
+            if not task:
+                task = generate_task(task_source=item, task_group=group, **kwargs)
+            items.append(task)
 
     def rshift_graph(current_item, next_item):
         if isinstance(next_item, list):

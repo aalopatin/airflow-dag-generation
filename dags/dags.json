@@ -1,0 +1,156 @@
+[
+    {
+        "id": "dag_generation_example_with_groups",
+        "start_date": "2024-08-01",
+        "schedule": null,
+        "graph": {
+            "id": "main",
+            "type": "par",
+            "items": [
+                {
+                    "id": "seq_group",
+                    "items": ["seq1", "seq2", "seq3"]
+                },
+                {
+                    "id": "par_group",
+                    "type": "par",
+                    "items": ["par1", "par2", "par3"]
+                }
+            ]
+        }
+    },
+    {
+        "id": "dag_generation_example_with_bash_operator",
+        "start_date": "2024-08-01",
+        "schedule": null,
+        "graph": {
+            "id": "main",
+            "type": "par",
+            "items": [
+                {
+                    "id": "seq_group",
+                    "items": [
+                        {
+                            "id": "seq1",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 1 second\"; sleep 1; echo \"seq1 FINISHED!!!\""
+                        },
+                        {
+                            "id": "seq2",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 2 seconds\"; sleep 2; echo \"seq2 FINISHED!!!\""
+                        },
+                        {
+                            "id": "seq3",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 3 seconds\"; sleep 3; echo \"seq3 FINISHED!!!\""
+                        }
+                    ]
+                },
+                {
+                    "id": "par_group",
+                    "type": "par",
+                    "items": [
+                        {
+                            "id": "par1",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 1 second\"; sleep 1; echo \"par1 FINISHED!!!\""
+                        },
+                        {
+                            "id": "par2",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 2 seconds\"; sleep 2; echo \"par2 FINISHED!!!\""
+                        },
+                        {
+                            "id": "par3",
+                            "operator": "BashOperator",
+                            "bash_command": "echo \"sleep 3 seconds\"; sleep 3; echo \"par3 FINISHED!!!\""
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "id": "dag_generation_example_with_spark_operator",
+        "start_date": "2024-08-01",
+        "schedule": null,
+        "graph": {
+            "type": "par",
+            "items": [
+                {
+                    "items": [
+                        {
+                            "id": "first_spark_application",
+                            "operator": "SparkSubmitOperator",
+                            "application": "/path/to/jar/spark-application.jar",
+                            "application_args": ["first-mart"]
+                        },
+                        {
+                            "id": "second_spark_application",
+                            "operator": "SparkSubmitOperator",
+                            "application": "/path/to/jar/spark-application.jar",
+                            "application_args": ["second-mart"]
+                        }
+                    ],
+                    "extra": {
+                        "spark": {
+                            "conf": {
+                                "spark.yarn.queue": "queue1"
+                            }
+                        }
+                    }
+                },
+                {
+                    "items": [
+                        {
+                            "id": "third_spark_application",
+                            "operator": "SparkSubmitOperator",
+                            "application": "/path/to/jar/spark-application.jar",
+                            "application_args": ["third-mart"]
+                        },
+                        {
+                            "id": "fourth_spark_application",
+                            "operator": "SparkSubmitOperator",
+                            "application": "/path/to/jar/spark-application.jar",
+                            "application_args": ["fourth-mart"]
+                        }
+                    ],
+                    "extra": {
+                        "spark": {
+                            "conf": {
+                                "spark.yarn.queue": "queue2"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "extra": {
+            "spark": {
+                "conf": {
+                    "spark.shuffle.service.enabled": "true",
+                    "spark.dynamicAllocation.enabled": "true",
+                    "spark.dynamicAllocation.minExecutors": 1,
+                    "spark.dynamicAllocation.maxExecutors": 10,
+                    "spark.dynamicAllocation.initialExecutors": 1,
+                    "spark.port.maxRetries": 100,
+                    "spark.yarn.maxAppAttempts": 1
+                }
+            }
+        }
+    },
+    {
+        "id": "dag_generation_example_with_custom_group_generator",
+        "start_date": "2024-08-01",
+        "schedule": null,
+        "graph": {
+            "items": [
+                {
+                    "id": "custom_group",
+                    "operator": "CustomGroupGenerator"
+                }
+            ]
+        }
+    }
+]
